@@ -1,0 +1,38 @@
+# Core Web Framework
+fastapi
+uvicorn
+python-multipart
+aiofiles
+
+# Data Processing and Analysis
+pandas
+numpy
+yfinance
+
+# Web Scraping and APIs
+requests
+beautifulsoup4
+feedparser
+
+# AI and Machine Learning
+langgraph
+langchain-core
+langchain-google-genai
+
+# Data Visualization
+matplotlib
+seaborn
+plotly
+mplfinance
+
+# Configuration and Environment
+python-dotenv
+
+# Date and Time Utilities
+python-dateutil
+
+# HTTP Client
+httpx
+
+# Optional: Development and Testing
+pytest

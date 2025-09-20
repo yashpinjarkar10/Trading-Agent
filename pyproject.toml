@@ -1,0 +1,26 @@
+[project]
+name = "2-0-trading-agent"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "dotenv>=0.9.9",
+    "fastapi>=0.116.2",
+    "feedparser>=6.0.12",
+    "jinja2>=3.1.6",
+    "langchain-google-genai>=2.1.12",
+    "langgraph>=0.6.7",
+    "matplotlib>=3.10.6",
+    "mplfinance>=0.12.10b0",
+    "numpy>=2.3.3",
+    "pandas>=2.3.2",
+    "plotly>=6.3.0",
+    "pydantic>=2.11.9",
+    "python-dotenv>=1.1.1",
+    "python-multipart>=0.0.20",
+    "seaborn>=0.13.2",
+    "uvicorn>=0.35.0",
+    "websockets>=15.0.1",
+    "yfinance>=0.2.66",
+]
