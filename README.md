@@ -8,12 +8,13 @@ pinned: false
 app_port: 7860
 ---
 
-# 🚀 Advanced Trading Agent Web Platform
+# 🚀 Trading Agent - AI-Powered Stock Analysis Platform
 
-A sophisticated, AI-powered stock analysis platform that combines real-time market data visualization with comprehensive multi-modal analysis capabilities. Built with modern web technologies and powered by advanced AI agents for intelligent market insights.
+A sophisticated, production-ready stock analysis platform with **separate frontend and backend architecture**. Combines real-time market data visualization with comprehensive multi-modal analysis capabilities. Built with React + Vite frontend and FastAPI backend, powered by advanced AI agents for intelligent market insights.
 
-[![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://python.org)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-green.svg)](https://fastapi.tiangolo.com)
+[![Python](https://img.shields.io/badge/Python-3.12+-blue.svg)](https://python.org)
+[![React](https://img.shields.io/badge/React-18.3+-61DAFB.svg)](https://react.dev)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.116+-green.svg)](https://fastapi.tiangolo.com)
 [![LangGraph](https://img.shields.io/badge/LangGraph-AI--Powered-purple.svg)](https://langchain.dev)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
@@ -63,9 +64,11 @@ The Advanced Trading Agent Web Platform is a comprehensive financial analysis to
 
 ## 🏗️ Architecture
 
+### **Frontend-Backend Separation**
+
 ```mermaid
 graph TB
-    A[Web Browser] --> B[FastAPI Backend]
+    A[React Frontend<br/>Port 5173] --> B[FastAPI Backend<br/>Port 8000]
     B --> C[Technical Analysis]
     B --> D[Fundamental Analysis]
     B --> E[News Sentiment]
@@ -76,34 +79,54 @@ graph TB
     E --> H[Multiple News Sources]
     F --> I[Google Gemini LLM]
     
-    J[TradingView] --> A
-    K[Static Assets] --> A
+    J[TradingView Widget] --> A
 ```
 
 ### 📁 **Project Structure**
 
 ```
 📦 2.0-Trading-Agent/
-├── 🌐 **Web Interface**
-│   ├── templates/
-│   │   └── index.html              # Main web interface
-│   └── static/
-│       ├── css/
-│       │   └── style.css           # Modern styling
-│       └── js/
-│           └── app.js              # Frontend logic
-├── 🔧 **Backend**
-│   └── main.py                     # FastAPI application
-├── 📊 **Analysis Modules**
-│   ├── Technical_Analyst.py        # Technical analysis engine
-│   ├── Fundamentals.py             # Fundamental analysis engine
-│   └── News_Analyst.py             # News sentiment analysis
-├── 🤖 **AI Agent**
-│   └── graph.py                    # LangGraph AI assistant
-└── 📋 **Configuration**
-    ├── requirements.txt            # Python dependencies
-    ├── .env                        # Environment variables
-    └── README.md                   # This file
+├── 📱 **frontend/**                    # React + Vite Frontend
+│   ├── src/
+│   │   ├── components/                # React components
+│   │   │   ├── ChartView.jsx
+│   │   │   ├── AIAnalyst.jsx
+│   │   │   ├── AnalysisForm.jsx
+│   │   │   ├── ChatInterface.jsx
+│   │   │   └── ResultsDisplay.jsx
+│   │   ├── services/                  # API integration
+│   │   │   └── api.js
+│   │   ├── styles/                    # CSS styles
+│   │   ├── config/                    # Constants
+│   │   ├── App.jsx
+│   │   └── main.jsx
+│   ├── public/
+│   ├── package.json
+│   ├── vite.config.js
+│   └── README.md
+│
+├── 🔧 **backend/**                     # FastAPI Backend
+│   ├── app/
+│   │   ├── config/                    # Settings & env config
+│   │   ├── routes/                    # API endpoints
+│   │   │   ├── analysis.py
+│   │   │   ├── chat.py
+│   │   │   └── health.py
+│   │   ├── core/                      # Business logic
+│   │   │   ├── technical.py
+│   │   │   ├── fundamental.py
+│   │   │   ├── news.py
+│   │   │   └── graph.py
+│   │   ├── models/                    # Pydantic schemas
+│   │   ├── utils/                     # Utilities
+│   │   └── main.py
+│   ├── pyproject.toml                 # uv dependencies
+│   ├── Dockerfile
+│   └── README.md
+│
+└── 📋 **Root**
+    ├── README.md                      # This file
+    └── .gitignore
 ```
 
 ## 📊 Analysis Modules
@@ -205,11 +228,13 @@ Multi-source news aggregation with advanced sentiment analysis and market impact
 
 ### 📋 **Prerequisites**
 
-- Python 3.8 or higher
-- pip package manager
+- **Backend**: Python 3.12+, uv (recommended) or pip
+- **Frontend**: Node.js 18+, npm/yarn/pnpm
 - Internet connection for data feeds
 
 ### 🔧 **Installation**
+
+#### **Option 1: Run Both (Development)**
 
 1. **Clone the repository**
    ```bash
@@ -217,37 +242,66 @@ Multi-source news aggregation with advanced sentiment analysis and market impact
    cd 2.0-Trading-Agent
    ```
 
-2. **Install dependencies**
+2. **Setup Backend**
    ```bash
+   cd backend
+   cp .env.example .env
+   # Edit .env and add your GEMINI_API_KEY
+   
+   # Install with uv (recommended)
+   uv sync
+   
+   # Or with pip
    pip install -r requirements.txt
+   
+   # Start backend server
+   python -m app.main
    ```
+   Backend runs on: http://localhost:8000
 
-3. **Set up environment variables**
-   Create a `.env` file in the root directory:
-   ```env
-   GEMINI_API_KEY=your_gemini_api_key_here
-   LANGSMITH_API_KEY=your_langsmith_key_here  # Optional
-   LANGSMITH_TRACING=true                     # Optional
-   ```
-
-4. **Start the application**
+3. **Setup Frontend** (in a new terminal)
    ```bash
-   python main.py
+   cd frontend
+   npm install
+   npm run dev
    ```
+   Frontend runs on: http://localhost:5173
 
-5. **Access the web interface**
-   Open your browser to: `http://localhost:8080`
+4. **Access the application**
+   Open your browser to: http://localhost:5173
+
+#### **Option 2: Backend Only (API)**
+
+```bash
+cd backend
+cp .env.example .env
+# Add your API keys to .env
+uv sync
+python -m app.main
+```
+
+Access API docs at: http://localhost:8000/docs
+
+#### **Option 3: Docker (Backend)**
+
+```bash
+cd backend
+docker build -t trading-agent-backend .
+docker run -p 8000:8000 --env-file .env trading-agent-backend
+```
 
 ### 🎯 **First Analysis**
 
-1. Navigate to the **AI Analyst** section
-2. Enter a stock ticker (e.g., "AAPL")
-3. Select analysis types:
+1. Navigate to the **Chart View** section
+2. View real-time TradingView charts
+3. Switch to **AI Analyst** section
+4. Enter a stock ticker (e.g., "AAPL")
+5. Select analysis types:
    - ☑️ Technical Analysis
    - ☑️ Fundamental Analysis
    - ☑️ News Sentiment
-4. Click **Run Analysis**
-5. View comprehensive multi-section report
+6. Click **Run Analysis**
+7. View comprehensive multi-section report
 
 ## 🔧 Configuration
 
