@@ -1,177 +1,128 @@
 import { useState } from 'react';
+import { LineChart, BarChart3, Newspaper, Loader2, Play, AlertTriangle } from 'lucide-react';
 import { analysisAPI } from '../services/api';
-import ResultsDisplay from './ResultsDisplay';
 import { TIME_PERIODS, DEFAULT_PERIOD, DEFAULT_DAYS_BACK } from '../config/constants';
+import { Card, CardBody, CardHeader, CardTitle } from './ui/Card';
+import { Input, Select, Checkbox } from './ui/Input';
+import Button from './ui/Button';
+import ResultsDisplay from './ResultsDisplay';
 
-function AnalysisForm({ initialSymbol }) {
-  const [ticker, setTicker] = useState(initialSymbol || 'AAPL');
-  const [selectedTypes, setSelectedTypes] = useState({
-    technical: false,
-    fundamental: false,
-    news: false,
-  });
+const TYPES = [
+  { id: 'technical', label: 'Technical', icon: LineChart, desc: 'Indicators, trends, signals' },
+  { id: 'fundamental', label: 'Fundamental', icon: BarChart3, desc: 'Valuation & financials' },
+  { id: 'news', label: 'News & Sentiment', icon: Newspaper, desc: 'Latest catalysts' },
+];
+
+export default function AnalysisForm({ initialSymbol = 'AAPL' }) {
+  const [ticker, setTicker] = useState(initialSymbol);
+  const [selected, setSelected] = useState({ technical: true, fundamental: false, news: false });
   const [period, setPeriod] = useState(DEFAULT_PERIOD);
   const [daysBack, setDaysBack] = useState(DEFAULT_DAYS_BACK);
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState([]);
   const [error, setError] = useState(null);
 
-  const handleTypeChange = (type) => {
-    setSelectedTypes((prev) => ({
-      ...prev,
-      [type]: !prev[type],
-    }));
-  };
+  const toggle = (id) => setSelected((s) => ({ ...s, [id]: !s[id] }));
 
-  const handleSubmit = async (e) => {
+  const submit = async (e) => {
     e.preventDefault();
-    
-    const selected = Object.keys(selectedTypes).filter((key) => selectedTypes[key]);
-    
-    if (!ticker.trim()) {
-      setError('Please enter a ticker symbol');
-      return;
-    }
-    
-    if (selected.length === 0) {
-      setError('Please select at least one analysis type');
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-    setResults([]);
-
+    const picks = Object.keys(selected).filter((k) => selected[k]);
+    if (!ticker.trim()) return setError('Enter a ticker');
+    if (picks.length === 0) return setError('Pick at least one analysis');
+    setError(null); setLoading(true); setResults([]);
     try {
-      const analysisResults = [];
-      
-      for (const type of selected) {
-        let result;
-        if (type === 'technical') {
-          result = await analysisAPI.technical(ticker, period);
-        } else if (type === 'fundamental') {
-          result = await analysisAPI.fundamental(ticker);
-        } else if (type === 'news') {
-          result = await analysisAPI.news(ticker, daysBack);
-        }
-        analysisResults.push(result);
+      const out = [];
+      for (const t of picks) {
+        if (t === 'technical') out.push(await analysisAPI.technical(ticker, period));
+        else if (t === 'fundamental') out.push(await analysisAPI.fundamental(ticker));
+        else if (t === 'news') out.push(await analysisAPI.news(ticker, daysBack));
       }
-      
-      setResults(analysisResults);
+      setResults(out);
     } catch (err) {
       setError(err.response?.data?.detail || err.message || 'Analysis failed');
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
   return (
-    <div className="analysis-form-container">
-      <div className="analysis-form glass-card">
-        <h3 className="form-title">Run Stock Analysis</h3>
-        
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label className="form-label">Stock Ticker</label>
-            <input
-              type="text"
-              className="form-input"
-              placeholder="e.g., AAPL, TSLA, MSFT"
-              value={ticker}
-              onChange={(e) => setTicker(e.target.value.toUpperCase())}
-            />
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">Analysis Types</label>
-            <div className="checkbox-group">
-              <label className="checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={selectedTypes.technical}
-                  onChange={() => handleTypeChange('technical')}
-                />
-                <span className="checkbox-text">📈 Technical Analysis</span>
-              </label>
-              <label className="checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={selectedTypes.fundamental}
-                  onChange={() => handleTypeChange('fundamental')}
-                />
-                <span className="checkbox-text">💰 Fundamental Analysis</span>
-              </label>
-              <label className="checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={selectedTypes.news}
-                  onChange={() => handleTypeChange('news')}
-                />
-                <span className="checkbox-text">📰 News Sentiment</span>
-              </label>
-            </div>
-          </div>
-
-          {selectedTypes.technical && (
-            <div className="form-group" id="technical-options">
-              <label className="form-label">Time Period</label>
-              <select
-                className="form-select"
-                value={period}
-                onChange={(e) => setPeriod(e.target.value)}
-              >
-                {TIME_PERIODS.map((p) => (
-                  <option key={p.value} value={p.value}>
-                    {p.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          {selectedTypes.news && (
-            <div className="form-group" id="news-options">
-              <label className="form-label">Days Back</label>
-              <input
-                type="number"
-                className="form-input"
-                min="1"
-                max="30"
-                value={daysBack}
-                onChange={(e) => setDaysBack(parseInt(e.target.value))}
+    <div className="space-y-5">
+      <Card>
+        <CardHeader>
+          <CardTitle icon={LineChart}>Run Analysis</CardTitle>
+          <span className="chip">Multi-modal</span>
+        </CardHeader>
+        <CardBody>
+          <form onSubmit={submit} className="space-y-5">
+            <div>
+              <label className="block text-xs uppercase tracking-wide text-text-muted mb-2">Ticker</label>
+              <Input
+                value={ticker}
+                onChange={(e) => setTicker(e.target.value.toUpperCase())}
+                placeholder="AAPL, BRK.B, BTC-USD…"
+                autoComplete="off"
               />
             </div>
-          )}
 
-          {error && (
-            <div className="error-message">
-              ⚠️ {error}
+            <div>
+              <label className="block text-xs uppercase tracking-wide text-text-muted mb-2">Analysis types</label>
+              <div className="grid sm:grid-cols-3 gap-2">
+                {TYPES.map((t) => {
+                  const Icon = t.icon;
+                  const active = selected[t.id];
+                  return (
+                    <button
+                      type="button"
+                      key={t.id}
+                      onClick={() => toggle(t.id)}
+                      className={`text-left p-3 rounded-xl border transition-all focus-ring ${
+                        active
+                          ? 'border-accent-cyan/40 bg-accent-cyan/5'
+                          : 'border-border bg-bg-subtle hover:border-border-strong'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 mb-1">
+                        <Icon className={`w-4 h-4 ${active ? 'text-accent-cyan' : 'text-text-secondary'}`} />
+                        <span className="text-sm font-medium text-text-primary">{t.label}</span>
+                      </div>
+                      <p className="text-xs text-text-muted">{t.desc}</p>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          )}
 
-          <button
-            type="submit"
-            className="btn btn-primary btn-large"
-            disabled={loading}
-          >
-            {loading ? (
-              <>
-                <span className="spinner"></span>
-                Analyzing...
-              </>
-            ) : (
-              <>
-                <span className="btn-icon">🚀</span>
-                Run Analysis
-              </>
+            <div className="grid sm:grid-cols-2 gap-4">
+              {selected.technical && (
+                <div>
+                  <label className="block text-xs uppercase tracking-wide text-text-muted mb-2">Period</label>
+                  <Select value={period} onChange={(e) => setPeriod(e.target.value)}>
+                    {TIME_PERIODS.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
+                  </Select>
+                </div>
+              )}
+              {selected.news && (
+                <div>
+                  <label className="block text-xs uppercase tracking-wide text-text-muted mb-2">Days back</label>
+                  <Input type="number" min="1" max="30" value={daysBack} onChange={(e) => setDaysBack(parseInt(e.target.value || '7', 10))} />
+                </div>
+              )}
+            </div>
+
+            {error && (
+              <div className="flex items-start gap-2 px-3 py-2 rounded-lg border border-accent-red/30 bg-accent-red/5 text-sm text-accent-red">
+                <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+                <span>{error}</span>
+              </div>
             )}
-          </button>
-        </form>
-      </div>
+
+            <Button type="submit" size="lg" disabled={loading} className="w-full sm:w-auto">
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
+              {loading ? 'Analyzing…' : 'Run analysis'}
+            </Button>
+          </form>
+        </CardBody>
+      </Card>
 
       {results.length > 0 && <ResultsDisplay results={results} />}
     </div>
   );
 }
-
-export default AnalysisForm;

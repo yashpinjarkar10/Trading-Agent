@@ -16,8 +16,15 @@ feedparser
 
 # AI and Machine Learning
 langgraph
+langgraph-checkpoint-sqlite
 langchain-core
 langchain-google-genai
+
+# Sentiment analysis (Bug #3 — finance-tuned VADER overlay)
+vaderSentiment
+
+# Cache / future job broker (Bug #5, #6)
+redis
 
 # Data Visualization
 matplotlib

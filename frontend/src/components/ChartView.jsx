@@ -1,129 +1,70 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useRef } from 'react';
+import { Card, CardBody, CardHeader, CardTitle } from './ui/Card';
+import { CandlestickChart } from 'lucide-react';
+import Badge from './ui/Badge';
 
-function ChartView({ currentSymbol, setCurrentSymbol, switchToAnalyst }) {
-  const [symbolInput, setSymbolInput] = useState(currentSymbol);
+function loadTradingView() {
+  return new Promise((resolve) => {
+    if (window.TradingView) return resolve(window.TradingView);
+    const existing = document.getElementById('tv-script');
+    if (existing) {
+      existing.addEventListener('load', () => resolve(window.TradingView));
+      return;
+    }
+    const s = document.createElement('script');
+    s.id = 'tv-script';
+    s.src = 'https://s3.tradingview.com/tv.js';
+    s.async = true;
+    s.onload = () => resolve(window.TradingView);
+    document.body.appendChild(s);
+  });
+}
+
+export default function ChartView({ symbol = 'AAPL', height = '100%' }) {
+  const containerId = useRef(`tv_chart_${Math.random().toString(36).slice(2)}`).current;
 
   useEffect(() => {
-    const script = document.createElement('script');
-    script.src = 'https://s3.tradingview.com/tv.js';
-    script.async = true;
-    script.onload = () => initializeTradingView();
-    document.body.appendChild(script);
-
-    return () => {
-      if (document.body.contains(script)) {
-        document.body.removeChild(script);
-      }
-    };
-  }, [currentSymbol]);
-
-  // Bug #7: do NOT hard-code NASDAQ. Accept either an explicit
-  // "EXCHANGE:TICKER" form (e.g. "NYSE:JPM", "NSE:RELIANCE", "BINANCE:BTCUSDT")
-  // or a bare ticker — TradingView will auto-resolve the latter to its primary
-  // listing exchange. This unblocks NYSE, LSE, NSE, HKEX, crypto, FX, etc.
-  const resolveSymbol = (input) => {
-    if (!input) return 'AAPL';
-    const trimmed = String(input).trim().toUpperCase();
-    return trimmed.includes(':') ? trimmed : trimmed;
-  };
-
-  const initializeTradingView = () => {
-    if (typeof TradingView !== 'undefined') {
-      new TradingView.widget({
+    let cancelled = false;
+    loadTradingView().then((TV) => {
+      if (cancelled || !TV) return;
+      const el = document.getElementById(containerId);
+      if (el) el.innerHTML = '';
+      // Bug #7: accept bare ticker; TV auto-resolves exchange.
+      const s = String(symbol || 'AAPL').trim().toUpperCase();
+      new TV.widget({
         autosize: true,
-        symbol: resolveSymbol(currentSymbol),
+        symbol: s,
         interval: 'D',
         timezone: 'Etc/UTC',
         theme: 'dark',
         style: '1',
         locale: 'en',
-        toolbar_bg: '#0a0b0f',
+        toolbar_bg: '#0d0f1a',
         enable_publishing: false,
         allow_symbol_change: true,
-        container_id: 'tradingview_chart',
-        studies: [
-          'MASimple@tv-basicstudies',
-          'RSI@tv-basicstudies',
-          'MACD@tv-basicstudies'
-        ],
+        container_id: containerId,
+        studies: ['MASimple@tv-basicstudies', 'RSI@tv-basicstudies'],
         hide_side_toolbar: false,
         save_image: false,
+        backgroundColor: 'rgba(13, 15, 26, 0)',
+        gridColor: 'rgba(255, 255, 255, 0.04)',
       });
-    }
-  };
-
-  const handleUpdateSymbol = () => {
-    const newSymbol = symbolInput.trim().toUpperCase();
-    if (newSymbol) {
-      setCurrentSymbol(newSymbol);
-    }
-  };
-
-  const handleQuickAnalysis = (type) => {
-    switchToAnalyst();
-  };
+    });
+    return () => { cancelled = true; };
+  }, [symbol, containerId]);
 
   return (
-    <div className="chart-section">
-      <div className="section-header">
-        <h2 className="section-title">
-          <span className="section-icon">📊</span>
-          Live Market Chart
-        </h2>
-        <div className="symbol-display">
-          <span className="symbol-label">Current Symbol:</span>
-          <span className="symbol-value" id="current-symbol">{currentSymbol}</span>
+    <Card className="flex flex-col h-full overflow-hidden">
+      <CardHeader>
+        <CardTitle icon={CandlestickChart}>Live Chart</CardTitle>
+        <div className="flex items-center gap-2">
+          <Badge tone="cyan" dot>{symbol}</Badge>
+          <Badge tone="neutral">TradingView</Badge>
         </div>
+      </CardHeader>
+      <div className="flex-1 min-h-0 relative">
+        <div id={containerId} style={{ height, width: '100%' }} className="absolute inset-0" />
       </div>
-
-      <div className="chart-container glass-card">
-        <div className="chart-controls">
-          <div className="symbol-input-group">
-            <input
-              type="text"
-              className="symbol-input"
-              placeholder="Enter symbol (e.g. AAPL, NYSE:JPM, NSE:RELIANCE, BINANCE:BTCUSDT)"
-              value={symbolInput}
-              onChange={(e) => setSymbolInput(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleUpdateSymbol()}
-            />
-            <button className="btn btn-primary" onClick={handleUpdateSymbol}>
-              Update Chart
-            </button>
-          </div>
-        </div>
-
-        <div id="tradingview_chart" style={{ height: '600px', width: '100%' }}></div>
-      </div>
-
-      <div className="quick-actions glass-card">
-        <h3 className="quick-actions-title">Quick Analysis</h3>
-        <div className="quick-actions-grid">
-          <button
-            className="analysis-btn technical"
-            onClick={() => handleQuickAnalysis('technical')}
-          >
-            <span className="btn-icon">📈</span>
-            <span className="btn-text">Technical Analysis</span>
-          </button>
-          <button
-            className="analysis-btn fundamental"
-            onClick={() => handleQuickAnalysis('fundamental')}
-          >
-            <span className="btn-icon">💰</span>
-            <span className="btn-text">Fundamental Analysis</span>
-          </button>
-          <button
-            className="analysis-btn news"
-            onClick={() => handleQuickAnalysis('news')}
-          >
-            <span className="btn-icon">📰</span>
-            <span className="btn-text">News Sentiment</span>
-          </button>
-        </div>
-      </div>
-    </div>
+    </Card>
   );
 }
-
-export default ChartView;
