@@ -1,0 +1,62 @@
+name: Scrape GDELT Events
+
+on:
+  schedule:
+    # GDELT publishes a new export every 15 minutes on the boundaries
+    # (00, 15, 30, 45). We poll a couple of minutes after each boundary
+    # to be sure the file is up.
+    - cron: "2,17,32,47 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Don't pile up GDELT runs — each can take a few minutes if the runner is
+# slow or the GDELT zip is large.
+concurrency:
+  group: scrape-gdelt
+  cancel-in-progress: false
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 13   # well under the next 15-min cron tick
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+          cache-dependency-glob: "backend/uv.lock"
+
+      - name: Install backend deps (cached after first run)
+        working-directory: backend
+        run: uv sync --frozen
+
+      - name: Verify required secrets are present
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
+            echo "::error::SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY missing in repo secrets"
+            exit 1
+          fi
+          echo "Secrets present (SUPABASE_URL length=${#SUPABASE_URL})"
+
+      - name: Run GDELT scraper
+        working-directory: backend
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          PYTHONUNBUFFERED: "1"
+        run: |
+          uv run python -m scraper.scripts.run_gdelt

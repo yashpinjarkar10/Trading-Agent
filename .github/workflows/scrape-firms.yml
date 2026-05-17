@@ -1,0 +1,64 @@
+name: Scrape NASA FIRMS Wildfires
+
+on:
+  schedule:
+    # Every 30 minutes. FIRMS pixels arrive in roughly 3-hour batches as
+    # satellites complete passes; */30 is plenty.
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: scrape-firms
+  cancel-in-progress: false
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+          cache-dependency-glob: "backend/uv.lock"
+
+      - name: Install backend deps (cached)
+        working-directory: backend
+        run: uv sync --frozen
+
+      - name: Verify required secrets are present
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          NASA_FIRMS_API_KEY: ${{ secrets.NASA_FIRMS_API_KEY }}
+        run: |
+          for v in SUPABASE_URL SUPABASE_SERVICE_ROLE_KEY NASA_FIRMS_API_KEY; do
+            eval val=\$$v
+            if [ -z "$val" ]; then
+              echo "::error::$v missing in repo secrets"
+              exit 1
+            fi
+          done
+          echo "All FIRMS secrets present."
+
+      - name: Run FIRMS scraper
+        working-directory: backend
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          NASA_FIRMS_API_KEY: ${{ secrets.NASA_FIRMS_API_KEY }}
+          PYTHONUNBUFFERED: "1"
+        run: |
+          uv run python -m scraper.scripts.run_firms

@@ -223,5 +223,4 @@ frontend/.env.production
 .env
 backend\.env
 
-.github
 .windsurf

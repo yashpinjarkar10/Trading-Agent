@@ -1,0 +1,63 @@
+name: Scrape USGS Earthquakes
+
+on:
+  schedule:
+    # Every 5 minutes (GitHub Actions minimum interval).
+    # USGS feed updates roughly once a minute, so we'll catch most events
+    # within a 5-min lag; severe quakes get an additional fast-track if we
+    # add a webhook later.
+    - cron: "*/5 * * * *"
+  workflow_dispatch:  # manual trigger for testing / backfill
+
+permissions:
+  contents: read
+
+# Cancel any still-running USGS scrape if a new one is triggered, to avoid
+# stacking up under load.
+concurrency:
+  group: scrape-usgs
+  cancel-in-progress: false  # let in-flight finish; queue the next
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4   # well under the next cron tick
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+          cache-dependency-glob: "backend/uv.lock"
+
+      - name: Install backend deps (cached after first run)
+        working-directory: backend
+        run: uv sync --frozen
+
+      - name: Verify required secrets are present
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
+            echo "::error::SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY missing in repo secrets"
+            exit 1
+          fi
+          echo "Secrets present (SUPABASE_URL length=${#SUPABASE_URL})"
+
+      - name: Run USGS scraper
+        working-directory: backend
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          PYTHONUNBUFFERED: "1"
+        run: |
+          uv run python -m scraper.scripts.run_usgs
