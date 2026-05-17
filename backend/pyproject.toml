@@ -26,4 +26,11 @@ dependencies = [
     "redis>=5.0.0",
     "langgraph-checkpoint-sqlite>=2.0.0",
     "vaderSentiment>=3.3.2",
+    # Event Map — read-only backend client.
+    # Writes (scrapers, enricher, retention) live in /scrapers and run on
+    # GitHub Actions; they have their own requirements.txt.
+    "supabase>=2.7.0",
+    # Wikipedia scraper dependencies
+    "beautifulsoup4>=4.12.0",
+    "google-genai>=0.8.0",
 ]

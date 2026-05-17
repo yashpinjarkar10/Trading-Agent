@@ -23,7 +23,7 @@ export default function HeroScene({ className }) {
         <directionalLight position={[5, 8, 5]} intensity={0.6} color="#22d3ee" />
         <directionalLight position={[-5, 4, -3]} intensity={0.4} color="#8b5cf6" />
         <Suspense fallback={null}>
-          <Candlesticks count={32} />
+          <Candlesticks count={10} />
           <GridFloor />
           <FloatingOrbs />
         </Suspense>
@@ -40,7 +40,7 @@ export default function HeroScene({ className }) {
   );
 }
 
-function Candlesticks({ count = 28 }) {
+function Candlesticks({ count = 10 }) {
   const meshRef = useRef();
   const dummy = useMemo(() => new THREE.Object3D(), []);
   const color = useMemo(() => new THREE.Color(), []);

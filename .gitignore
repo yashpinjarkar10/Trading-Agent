@@ -219,3 +219,9 @@ frontend/.env.production
 # Old structure (already removed)
 # Note: backend/app/main.py is the new location
 
+
+.env
+backend\.env
+
+.github
+.windsurf

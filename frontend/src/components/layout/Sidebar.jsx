@@ -1,10 +1,11 @@
 import { motion } from 'framer-motion';
-import { LayoutDashboard, LineChart, Newspaper, NotebookText, Settings, Sparkles, ChevronLeft } from 'lucide-react';
+import { LayoutDashboard, LineChart, Globe, Newspaper, NotebookText, Settings, Sparkles, ChevronLeft } from 'lucide-react';
 import { cn } from '../../utils/cn';
 
 const nav = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'analysis', label: 'Analysis', icon: LineChart },
+  { id: 'events', label: 'World Pulse', icon: Globe },
   { id: 'news', label: 'News & Sentiment', icon: Newspaper, badge: 'soon' },
   { id: 'journal', label: 'Journal', icon: NotebookText, badge: 'soon' },
 ];

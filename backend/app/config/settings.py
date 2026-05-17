@@ -33,6 +33,13 @@ class Settings:
     # LangGraph persistent checkpoint store (SQLite — zero infra, survives restarts)
     LANGGRAPH_DB_PATH: str = os.getenv("LANGGRAPH_DB_PATH", "data/langgraph_checkpoints.sqlite")
 
+    # ── Event Map (read-only Supabase client) ─────────────────────────────
+    # Writes happen via /scrapers on GitHub Actions, not from the backend.
+    EVENTS_ENABLED: bool = os.getenv("EVENTS_ENABLED", "false").lower() == "true"
+    SUPABASE_URL: str = os.getenv("SUPABASE_URL", "")
+    SUPABASE_SERVICE_ROLE_KEY: str = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
+    SUPABASE_ANON_KEY: str = os.getenv("SUPABASE_ANON_KEY", "")
+
     DEBUG: bool = os.getenv("DEBUG", "false").lower() == "true"
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "info")
 

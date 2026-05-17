@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Settings as SettingsIcon, Github, ExternalLink } from 'lucide-react';
 import AppShell from './components/layout/AppShell';
 import ChartView from './components/ChartView';
 import ChatInterface from './components/ChatInterface';
 import AnalysisForm from './components/AnalysisForm';
+import EventsPage from './pages/EventsPage';
+import { OPEN_TICKER_EVENT } from './services/events';
 import { Card, CardBody, CardHeader, CardTitle } from './components/ui/Card';
 import Badge from './components/ui/Badge';
 import './styles/index.css';
@@ -11,6 +13,19 @@ import './styles/index.css';
 export default function App() {
   const [page, setPage] = useState('dashboard');
   const [symbol, setSymbol] = useState('AAPL');
+
+  // Phase 3E — 3.16: ticker chip in event detail panel switches the chart symbol
+  // and navigates to the Dashboard.
+  useEffect(() => {
+    const handler = (e) => {
+      const t = e?.detail?.ticker;
+      if (!t) return;
+      setSymbol(String(t).toUpperCase());
+      setPage('dashboard');
+    };
+    window.addEventListener(OPEN_TICKER_EVENT, handler);
+    return () => window.removeEventListener(OPEN_TICKER_EVENT, handler);
+  }, []);
 
   return (
     <AppShell
@@ -21,6 +36,7 @@ export default function App() {
     >
       {page === 'dashboard' && <Dashboard symbol={symbol} />}
       {page === 'analysis' && <AnalysisPage symbol={symbol} />}
+      {page === 'events' && <EventsPage />}
       {page === 'settings' && <SettingsPage />}
     </AppShell>
   );

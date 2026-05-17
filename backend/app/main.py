@@ -1,9 +1,13 @@
+import logging
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
 from app.config.settings import settings
 from app.routes import analysis, chat, health
+
+logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title=settings.APP_TITLE,
@@ -32,6 +36,15 @@ app.add_middleware(
 app.include_router(analysis.router)
 app.include_router(chat.router)
 app.include_router(health.router)
+
+# Event Map (Phase 1+) — only mounted when EVENTS_ENABLED=true to keep the
+# rest of the app bootable on machines without a Supabase connection.
+if settings.EVENTS_ENABLED:
+    from app.events.routes import router as events_router
+    app.include_router(events_router)
+    logger.info("Event Map enabled — /api/events router mounted")
+else:
+    logger.info("Event Map disabled (set EVENTS_ENABLED=true to mount)")
 
 @app.get("/")
 async def root():

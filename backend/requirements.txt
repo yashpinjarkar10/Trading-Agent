@@ -41,5 +41,8 @@ python-dateutil
 # HTTP Client
 httpx
 
+# Event Map — read-only backend client (writes live in /scrapers)
+supabase>=2.7.0
+
 # Optional: Development and Testing
 pytest
