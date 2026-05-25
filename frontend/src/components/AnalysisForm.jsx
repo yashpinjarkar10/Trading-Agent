@@ -1,23 +1,21 @@
 import { useState } from 'react';
-import { LineChart, BarChart3, Newspaper, Loader2, Play, AlertTriangle } from 'lucide-react';
+import { LineChart, BarChart3, Newspaper, MessageSquare, Loader2, Play, AlertTriangle } from 'lucide-react';
 import { analysisAPI } from '../services/api';
-import { TIME_PERIODS, DEFAULT_PERIOD, DEFAULT_DAYS_BACK } from '../config/constants';
 import { Card, CardBody, CardHeader, CardTitle } from './ui/Card';
 import { Input, Select, Checkbox } from './ui/Input';
 import Button from './ui/Button';
 import ResultsDisplay from './ResultsDisplay';
 
 const TYPES = [
-  { id: 'technical', label: 'Technical', icon: LineChart, desc: 'Indicators, trends, signals' },
-  { id: 'fundamental', label: 'Fundamental', icon: BarChart3, desc: 'Valuation & financials' },
-  { id: 'news', label: 'News & Sentiment', icon: Newspaper, desc: 'Latest catalysts' },
+  { id: 'market', label: 'Market', icon: LineChart, desc: 'Technical indicators & trends' },
+  { id: 'fundamentals', label: 'Fundamentals', icon: BarChart3, desc: 'Financials & valuations' },
+  { id: 'news', label: 'News', icon: Newspaper, desc: 'Latest catalysts & events' },
+  { id: 'sentiment', label: 'Sentiment', icon: MessageSquare, desc: 'Social & market mood' },
 ];
 
 export default function AnalysisForm({ initialSymbol = 'AAPL' }) {
   const [ticker, setTicker] = useState(initialSymbol);
-  const [selected, setSelected] = useState({ technical: true, fundamental: false, news: false });
-  const [period, setPeriod] = useState(DEFAULT_PERIOD);
-  const [daysBack, setDaysBack] = useState(DEFAULT_DAYS_BACK);
+  const [selected, setSelected] = useState({ market: true, fundamentals: false, news: false, sentiment: false });
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState([]);
   const [error, setError] = useState(null);
@@ -33,9 +31,10 @@ export default function AnalysisForm({ initialSymbol = 'AAPL' }) {
     try {
       const out = [];
       for (const t of picks) {
-        if (t === 'technical') out.push(await analysisAPI.technical(ticker, period));
-        else if (t === 'fundamental') out.push(await analysisAPI.fundamental(ticker));
-        else if (t === 'news') out.push(await analysisAPI.news(ticker, daysBack));
+        if (t === 'market') out.push(await analysisAPI.market(ticker));
+        else if (t === 'fundamentals') out.push(await analysisAPI.fundamentals(ticker));
+        else if (t === 'news') out.push(await analysisAPI.news(ticker));
+        else if (t === 'sentiment') out.push(await analysisAPI.sentiment(ticker));
       }
       setResults(out);
     } catch (err) {
@@ -64,7 +63,7 @@ export default function AnalysisForm({ initialSymbol = 'AAPL' }) {
 
             <div>
               <label className="block text-xs uppercase tracking-wide text-text-muted mb-2">Analysis types</label>
-              <div className="grid sm:grid-cols-3 gap-2">
+              <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-2">
                 {TYPES.map((t) => {
                   const Icon = t.icon;
                   const active = selected[t.id];
@@ -88,23 +87,6 @@ export default function AnalysisForm({ initialSymbol = 'AAPL' }) {
                   );
                 })}
               </div>
-            </div>
-
-            <div className="grid sm:grid-cols-2 gap-4">
-              {selected.technical && (
-                <div>
-                  <label className="block text-xs uppercase tracking-wide text-text-muted mb-2">Period</label>
-                  <Select value={period} onChange={(e) => setPeriod(e.target.value)}>
-                    {TIME_PERIODS.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
-                  </Select>
-                </div>
-              )}
-              {selected.news && (
-                <div>
-                  <label className="block text-xs uppercase tracking-wide text-text-muted mb-2">Days back</label>
-                  <Input type="number" min="1" max="30" value={daysBack} onChange={(e) => setDaysBack(parseInt(e.target.value || '7', 10))} />
-                </div>
-              )}
             </div>
 
             {error && (

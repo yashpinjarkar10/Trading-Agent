@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { Download, LineChart, BarChart3, Newspaper } from 'lucide-react';
+import { Download, LineChart, BarChart3, Newspaper, MessageSquare } from 'lucide-react';
 import { Card, CardBody, CardHeader, CardTitle } from './ui/Card';
 import Button from './ui/Button';
 import Badge from './ui/Badge';
 import SafeHTML from './SafeHTML';
 
-const ICONS = { technical: LineChart, fundamental: BarChart3, news: Newspaper };
+const ICONS = { market: LineChart, fundamentals: BarChart3, news: Newspaper, sentiment: MessageSquare };
 
 function formatAnalysis(text) {
   if (!text) return '';

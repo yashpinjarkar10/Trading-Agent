@@ -61,7 +61,7 @@ function AnalysisPage({ symbol }) {
       <div className="mb-6">
         <h1 className="text-2xl font-semibold text-text-primary mb-1">Multi-modal Analysis</h1>
         <p className="text-sm text-text-secondary">
-          Run technical, fundamental, and sentiment analysis side-by-side.
+          Run market, fundamental, news, and sentiment analysis side-by-side.
         </p>
       </div>
       <AnalysisForm initialSymbol={symbol} />

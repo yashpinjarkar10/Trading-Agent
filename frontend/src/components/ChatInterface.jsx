@@ -14,6 +14,18 @@ const QUICK_PROMPTS = [
   'Explain RSI divergence',
 ];
 
+const AGENT_NAMES = {
+  market_analyst: 'Market Analyst',
+  fundamentals_analyst: 'Fundamentals Analyst',
+  news_analyst: 'News Analyst',
+  sentiment_analyst: 'Sentiment Analyst',
+  investment_debate: 'Investment Debate',
+  risk_debate: 'Risk Management',
+  portfolio_manager: 'Portfolio Manager',
+  tools: 'Fetching Data',
+  tool_calling_llm: 'Planning',
+};
+
 function formatChat(content) {
   return content
     .replace(/^##\s*(.+)$/gm, '<h2 class="chat-section-header">$1</h2>')
@@ -35,6 +47,7 @@ export default function ChatInterface() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [activeAgents, setActiveAgents] = useState([]);
   const [threadId, setThreadId] = useState(() => chatAPI.getThreadId());
   const endRef = useRef(null);
 
@@ -46,6 +59,16 @@ export default function ChatInterface() {
     setInput('');
     setMessages((m) => [...m, { role: 'user', content: q }]);
     setLoading(true);
+    setActiveAgents([]);
+    
+    const eventSource = new EventSource(chatAPI.getStreamUrl(threadId));
+    eventSource.onmessage = (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        if (data.nodes) setActiveAgents(data.nodes);
+      } catch (err) {}
+    };
+
     try {
       const res = await chatAPI.sendMessage(q, threadId);
       setMessages((m) => [...m, { role: 'assistant', content: res.response }]);
@@ -53,6 +76,8 @@ export default function ChatInterface() {
       setMessages((m) => [...m, { role: 'assistant', content: `**Error:** ${e.response?.data?.detail || e.message || 'Request failed'}` }]);
     } finally {
       setLoading(false);
+      eventSource.close();
+      setActiveAgents([]);
     }
   };
 
@@ -109,10 +134,35 @@ export default function ChatInterface() {
             <div className="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center border bg-accent-cyan/10 border-accent-cyan/30 text-accent-cyan">
               <Sparkles className="w-4 h-4 animate-pulse" />
             </div>
-            <div className="flex items-center gap-1.5 px-4 py-3 rounded-xl bg-bg-subtle border border-border">
-              <span className="w-1.5 h-1.5 rounded-full bg-text-muted animate-pulse" style={{ animationDelay: '0ms' }} />
-              <span className="w-1.5 h-1.5 rounded-full bg-text-muted animate-pulse" style={{ animationDelay: '150ms' }} />
-              <span className="w-1.5 h-1.5 rounded-full bg-text-muted animate-pulse" style={{ animationDelay: '300ms' }} />
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-1.5 px-4 py-3 rounded-xl bg-bg-subtle border border-border w-fit">
+                <span className="w-1.5 h-1.5 rounded-full bg-text-muted animate-pulse" style={{ animationDelay: '0ms' }} />
+                <span className="w-1.5 h-1.5 rounded-full bg-text-muted animate-pulse" style={{ animationDelay: '150ms' }} />
+                <span className="w-1.5 h-1.5 rounded-full bg-text-muted animate-pulse" style={{ animationDelay: '300ms' }} />
+              </div>
+              
+              <AnimatePresence>
+                {activeAgents.length > 0 && (
+                  <motion.div 
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="flex flex-wrap gap-2 mt-1"
+                  >
+                    {activeAgents.map(agent => (
+                      <motion.div 
+                        key={agent}
+                        initial={{ scale: 0.8 }}
+                        animate={{ scale: 1 }}
+                        className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-md bg-accent-cyan/10 border border-accent-cyan/20 text-accent-cyan"
+                      >
+                        <Sparkles className="w-3 h-3 animate-pulse" />
+                        <span className="font-medium">{AGENT_NAMES[agent] || agent.replace(/_/g, ' ')}</span>
+                      </motion.div>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </div>
         )}

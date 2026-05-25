@@ -4,62 +4,53 @@ from datetime import datetime
 
 from app.models.schemas import AnalysisRequest
 from app.utils.ticker_validator import get_valid_ticker
-from app.core.technical import analyze_stock_technical
-from app.core.news import analyze_stock_news
-from app.core.fundamental import analyze_stock_fundamentals
+from app.tradingagents.single_analyst_graph import run_single_analyst
 
 router = APIRouter(prefix="/api/analysis", tags=["analysis"])
 
-@router.post("/technical")
-async def technical_analysis(request: AnalysisRequest):
-    """Perform technical analysis on a stock"""
+@router.post("/market")
+async def market_analysis(request: AnalysisRequest):
+    """Perform market/technical analysis on a stock"""
     try:
         validated_ticker = get_valid_ticker(request.ticker)
-        print(f"🔍 Running technical analysis for {validated_ticker} (original: {request.ticker})")
-        result = analyze_stock_technical(
-            ticker=validated_ticker,
-            period=request.period
-        )
+        print(f"🔍 Running market analysis for {validated_ticker} (original: {request.ticker})")
+        result = run_single_analyst(validated_ticker, "market")
         return JSONResponse({
             "success": True,
-            "analysis_type": "technical",
+            "analysis_type": "market",
             "ticker": request.ticker,
             "timestamp": datetime.now().isoformat(),
             "result": result
         })
     except Exception as e:
-        print(f"❌ Technical analysis error: {e}")
-        raise HTTPException(status_code=500, detail=f"Technical analysis failed: {str(e)}")
+        print(f"❌ Market analysis error: {e}")
+        raise HTTPException(status_code=500, detail=f"Market analysis failed: {str(e)}")
 
-@router.post("/fundamental")
-async def fundamental_analysis(request: AnalysisRequest):
+@router.post("/fundamentals")
+async def fundamentals_analysis(request: AnalysisRequest):
     """Perform fundamental analysis on a stock"""
     try:
         validated_ticker = get_valid_ticker(request.ticker)
-        print(f"📊 Running fundamental analysis for {validated_ticker} (original: {request.ticker})")
-        result = analyze_stock_fundamentals(ticker=validated_ticker)
+        print(f"📊 Running fundamentals analysis for {validated_ticker} (original: {request.ticker})")
+        result = run_single_analyst(validated_ticker, "fundamentals")
         return JSONResponse({
             "success": True,
-            "analysis_type": "fundamental",
+            "analysis_type": "fundamentals",
             "ticker": request.ticker,
             "timestamp": datetime.now().isoformat(),
             "result": result
         })
     except Exception as e:
-        print(f"❌ Fundamental analysis error: {e}")
-        raise HTTPException(status_code=500, detail=f"Fundamental analysis failed: {str(e)}")
+        print(f"❌ Fundamentals analysis error: {e}")
+        raise HTTPException(status_code=500, detail=f"Fundamentals analysis failed: {str(e)}")
 
 @router.post("/news")
 async def news_analysis(request: AnalysisRequest):
-    """Perform news sentiment analysis on a stock"""
+    """Perform news analysis on a stock"""
     try:
         validated_ticker = get_valid_ticker(request.ticker)
         print(f"📰 Running news analysis for {validated_ticker} (original: {request.ticker})")
-        result = analyze_stock_news(
-            ticker=validated_ticker,
-            days_back=request.days_back,
-            max_articles=request.max_articles
-        )
+        result = run_single_analyst(validated_ticker, "news")
         return JSONResponse({
             "success": True,
             "analysis_type": "news",
@@ -70,3 +61,21 @@ async def news_analysis(request: AnalysisRequest):
     except Exception as e:
         print(f"❌ News analysis error: {e}")
         raise HTTPException(status_code=500, detail=f"News analysis failed: {str(e)}")
+
+@router.post("/sentiment")
+async def sentiment_analysis(request: AnalysisRequest):
+    """Perform sentiment analysis on a stock"""
+    try:
+        validated_ticker = get_valid_ticker(request.ticker)
+        print(f"🧠 Running sentiment analysis for {validated_ticker} (original: {request.ticker})")
+        result = run_single_analyst(validated_ticker, "sentiment")
+        return JSONResponse({
+            "success": True,
+            "analysis_type": "sentiment",
+            "ticker": request.ticker,
+            "timestamp": datetime.now().isoformat(),
+            "result": result
+        })
+    except Exception as e:
+        print(f"❌ Sentiment analysis error: {e}")
+        raise HTTPException(status_code=500, detail=f"Sentiment analysis failed: {str(e)}")

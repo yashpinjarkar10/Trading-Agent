@@ -10,27 +10,23 @@ const api = axios.create({
 });
 
 export const analysisAPI = {
-  technical: async (ticker, period = '1y') => {
-    const response = await api.post('/api/analysis/technical', {
-      ticker,
-      period,
-    });
+  market: async (ticker) => {
+    const response = await api.post('/api/analysis/market', { ticker });
     return response.data;
   },
 
-  fundamental: async (ticker) => {
-    const response = await api.post('/api/analysis/fundamental', {
-      ticker,
-    });
+  fundamentals: async (ticker) => {
+    const response = await api.post('/api/analysis/fundamentals', { ticker });
     return response.data;
   },
 
-  news: async (ticker, daysBack = 7, maxArticles = 50) => {
-    const response = await api.post('/api/analysis/news', {
-      ticker,
-      days_back: daysBack,
-      max_articles: maxArticles,
-    });
+  news: async (ticker) => {
+    const response = await api.post('/api/analysis/news', { ticker });
+    return response.data;
+  },
+  
+  sentiment: async (ticker) => {
+    const response = await api.post('/api/analysis/sentiment', { ticker });
     return response.data;
   },
 };
@@ -53,6 +49,9 @@ function getOrCreateThreadId() {
 
 export const chatAPI = {
   getThreadId: getOrCreateThreadId,
+  getStreamUrl: (threadId) => {
+    return `${API_BASE_URL}/api/chat/stream/${threadId}`;
+  },
   resetThread: () => {
     localStorage.removeItem(THREAD_ID_KEY);
     return getOrCreateThreadId();

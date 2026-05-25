@@ -221,6 +221,10 @@ frontend/.env.production
 
 
 .env
-backend\.env
+backend/.env
+frontend/.env
+
 
 .windsurf
+
+/docs
