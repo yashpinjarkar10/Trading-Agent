@@ -48,9 +48,14 @@ backend/
 ├── app/
 │   ├── config/          # Configuration and settings
 │   ├── routes/          # API endpoints
-│   ├── core/            # Business logic (analysis modules)
+│   ├── core/            # Core models
+│   ├── tradingagents/   # LangGraph AI Agents
+│   │   ├── agents/      # Analyst nodes (market, fundamentals, news, sentiment)
+│   │   ├── dataflows/   # Market data fetching
+│   │   ├── graph/       # Multi-agent debate orchestration
+│   │   └── chat_graph.py# Main chatbot orchestrator
 │   ├── models/          # Pydantic schemas
-│   └── utils/           # Utility functions
+│   └── utils/           # Utility functions (SSE progress tracking)
 ├── .env                 # Environment variables (not in git)
 ├── .env.example         # Environment template
 ├── pyproject.toml       # Project dependencies (uv)
@@ -61,12 +66,11 @@ backend/
 ## 🔌 API Endpoints
 
 ### Analysis
-- `POST /api/analysis/technical` - Technical analysis
-- `POST /api/analysis/fundamental` - Fundamental analysis
-- `POST /api/analysis/news` - News sentiment analysis
+- `POST /api/analysis/{type}` - Single agent analysis. Supported types: `market`, `fundamentals`, `news`, `sentiment`.
 
 ### Chat
-- `POST /api/chat` - Chat with AI trading agent
+- `POST /api/chat` - Chat with AI trading agent (runs the full multi-agent debate)
+- `GET /api/chat/stream/{thread_id}` - SSE endpoint to visualize executing nodes in real-time.
 
 ### Health
 - `GET /api/health` - Health check
@@ -124,9 +128,9 @@ pytest tests/
 ### Quick Example
 
 ```bash
-curl -X POST "http://localhost:8000/api/analysis/technical" \
+curl -X POST "http://localhost:8000/api/analysis/market" \
   -H "Content-Type: application/json" \
-  -d '{"ticker": "AAPL", "period": "1y"}'
+  -d '{"ticker": "AAPL"}'
 ```
 
 ### What Each Doc Covers

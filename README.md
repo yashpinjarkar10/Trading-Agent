@@ -69,15 +69,17 @@ The Advanced Trading Agent Web Platform is a comprehensive financial analysis to
 ```mermaid
 graph TB
     A[React Frontend<br/>Port 5173] --> B[FastAPI Backend<br/>Port 8000]
-    B --> C[Technical Analysis]
-    B --> D[Fundamental Analysis]
-    B --> E[News Sentiment]
-    B --> F[LangGraph AI Agent]
+    B --> C[Market Analyst]
+    B --> D[Fundamentals Analyst]
+    B --> E[News Analyst]
+    B --> F[Sentiment Analyst]
+    B --> K[LangGraph Orchestrator]
     
-    C --> G[yfinance API]
+    C --> G[yfinance API / Financial Data]
     D --> G
-    E --> H[Multiple News Sources]
-    F --> I[Google Gemini LLM]
+    E --> H[News Sources]
+    F --> H
+    K --> I[Google Gemini LLM]
     
     J[TradingView Widget] --> A
 ```
@@ -112,11 +114,12 @@ graph TB
 │   │   │   ├── analysis.py
 │   │   │   ├── chat.py
 │   │   │   └── health.py
-│   │   ├── core/                      # Business logic
-│   │   │   ├── technical.py
-│   │   │   ├── fundamental.py
-│   │   │   ├── news.py
-│   │   │   └── graph.py
+│   │   ├── core/                      # Core models and logic
+│   │   ├── tradingagents/             # LangGraph AI Agents
+│   │   │   ├── agents/                # Individual analysts (market, fundamentals, news, sentiment)
+│   │   │   ├── dataflows/             # Data fetching and ingestion tools
+│   │   │   ├── graph/                 # Main graph execution and state
+│   │   │   └── chat_graph.py          # AI Assistant orchestrator
 │   │   ├── models/                    # Pydantic schemas
 │   │   ├── utils/                     # Utilities
 │   │   └── main.py
@@ -131,98 +134,41 @@ graph TB
 
 ## 📊 Analysis Modules
 
-### 📈 **Technical Analysis** (`Technical_Analyst.py`)
+### 📈 **Market Analysis** (`market_analyst.py`)
 
-Comprehensive technical analysis with 20+ indicators and pattern recognition.
-
-#### **Indicators & Metrics**
-
-| Category | Indicators | Description |
-|----------|------------|-------------|
-| **Trend** | SMA, EMA, MACD | Moving averages and convergence/divergence |
-| **Momentum** | RSI, Stochastic, Williams %R | Overbought/oversold conditions |
-| **Volatility** | Bollinger Bands, ATR | Price volatility and channel analysis |
-| **Volume** | OBV, VWAP | Volume-based trend confirmation |
+Comprehensive market analysis tracking price action, trends, and support/resistance.
 
 #### **Features**
 - ✅ **Signal Detection**: Automated buy/sell signal generation
-- ✅ **Support/Resistance**: Dynamic level identification
-- ✅ **Trend Analysis**: Short, medium, and long-term trend classification
-- ✅ **Technical Score**: Weighted scoring system (0-10 scale)
-- ✅ **Pattern Recognition**: Chart pattern identification
+- ✅ **Technical Score**: Weighted scoring system
+- ✅ **Pattern Recognition**: Support and resistance levels
 
-#### **Sample Output**
-```
-📈 TECHNICAL ANALYSIS REPORT: AAPL
-⭐ Technical Score: 7.2/10 (Strong Buy)
-📊 Current Indicators:
-  • RSI (14): 45.2 (Neutral)
-  • MACD: Bullish crossover detected
-  • Bollinger Bands: Price near lower band (potential bounce)
-🎯 Support: $185.50 | Resistance: $195.20
-```
+### 💰 **Fundamental Analysis** (`fundamentals_analyst.py`)
 
-### 💰 **Fundamental Analysis** (`Fundamentals.py`)
-
-Deep dive into company financials, valuation metrics, and investment scoring.
-
-#### **Analysis Categories**
-
-| Category | Metrics | Purpose |
-|----------|---------|---------|
-| **Valuation** | P/E, PEG, P/B, P/S, EV/EBITDA | Price vs intrinsic value assessment |
-| **Profitability** | ROE, ROA, Profit Margins | Operational efficiency analysis |
-| **Financial Health** | Current Ratio, Debt/Equity, Cash Flow | Balance sheet strength |
-| **Growth** | Revenue Growth, Earnings Growth | Business expansion trends |
+Deep dive into company financials, valuation metrics, and balance sheets.
 
 #### **Features**
-- ✅ **Investment Score**: 10-point scoring system based on key metrics
-- ✅ **Peer Comparison**: Industry benchmark analysis
-- ✅ **Analyst Consensus**: Target prices and recommendations
+- ✅ **Investment Score**: Scoring system based on key metrics
+- ✅ **Financial Health**: Cash flow and income statements
 - ✅ **Risk Assessment**: Financial risk factor identification
-- ✅ **Trend Analysis**: Multi-year financial trend evaluation
 
-#### **Sample Output**
-```
-💰 FUNDAMENTAL ANALYSIS REPORT: AAPL
-⭐ Investment Score: 8/10 (Strong Buy)
-📊 Key Metrics:
-  • P/E Ratio: 28.5 (Reasonable)
-  • ROE: 147% (Excellent)
-  • Debt/Equity: 170% (Moderate risk)
-🎯 Target Price: $210 (Analyst consensus)
-```
+### 📰 **News Analysis** (`news_analyst.py`)
 
-### 📰 **News Sentiment Analysis** (`News_Analyst.py`)
+Multi-source news aggregation identifying macro trends and insider transactions.
 
-Multi-source news aggregation with advanced sentiment analysis and market impact assessment.
+#### **Features**
+- ✅ **Global & Local Impact**: Analyzes specific company news vs global news
+- ✅ **Insider Tracking**: Monitors insider trades
+- ✅ **Risk Factors**: Identifies regulatory or supply chain concerns
 
-#### **Data Sources**
+### 🧠 **Sentiment Analysis** (`sentiment_analyst.py`)
 
-| Source | Type | Coverage |
-|--------|------|----------|
-| **Yahoo Finance** | Financial News | Real-time market news |
-| **Google News** | General News | Broader market sentiment |
-| **RSS Feeds** | Multiple Sources | Reuters, Bloomberg, MarketWatch |
+Evaluates market psychology and social sentiment for the asset.
 
-#### **Analysis Features**
-- ✅ **Sentiment Scoring**: -1 to +1 scale with confidence levels
-- ✅ **Relevance Filtering**: AI-powered relevance scoring (0-10)
-- ✅ **Trend Analysis**: Historical sentiment tracking
-- ✅ **Impact Assessment**: News volume vs market impact correlation
-- ✅ **Source Diversity**: Multi-source bias reduction
-
-#### **Sample Output**
-```
-📰 NEWS SENTIMENT ANALYSIS: AAPL
-📊 Overall Sentiment: +0.65 (Positive)
-📈 Articles Analyzed: 45 (7 days)
-🔍 Key Insights:
-  • Strong earnings beat driving positive sentiment
-  • New product launch generating buzz
-  • Analyst upgrades increasing confidence
-⚠️ Risk Factors: Supply chain concerns mentioned
-```
+#### **Features**
+- ✅ **Sentiment Scoring**: Positive/Negative outlook scaling
+- ✅ **Trend Analysis**: Identifying retail vs institutional sentiment
+- ✅ **Impact Assessment**: Correlating sentiment with price action
 
 ## 🚀 Quick Start
 
@@ -378,10 +324,9 @@ docker run -p 8000:8000 --env-file .env trading-agent-backend
 | Method | Endpoint | Description | Parameters |
 |--------|----------|-------------|------------|
 | `GET` | `/` | Web interface | - |
-| `POST` | `/api/analysis/technical` | Technical analysis | `ticker`, `period` |
-| `POST` | `/api/analysis/fundamental` | Fundamental analysis | `ticker` |
-| `POST` | `/api/analysis/news` | News sentiment | `ticker`, `days_back` |
-| `POST` | `/api/chat` | AI assistant | `message`, `thread_id` |
+| `POST` | `/api/analysis/{type}` | Single agent analysis (market, fundamentals, news, sentiment) | `ticker` |
+| `POST` | `/api/chat` | AI assistant (orchestrates full multi-agent debate) | `message`, `thread_id` |
+| `GET` | `/api/chat/stream/{thread_id}` | Live SSE streaming of active nodes | - |
 | `GET` | `/api/health` | Health check | - |
 
 ### 📝 **Request/Response Examples**

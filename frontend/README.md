@@ -62,15 +62,15 @@ frontend/
 - Quick analysis buttons
 
 ### AI Analyst
-- **Direct Analysis Mode**: Run technical, fundamental, and news analysis
-- **AI Chat Mode**: Natural language queries about stocks
+- **Direct Analysis Mode**: Run individual Market, Fundamentals, News, or Sentiment analysis side-by-side.
+- **AI Chat Mode**: Natural language queries orchestrating the entire LangGraph team of agents, with real-time SSE node execution tracking.
 
 ### Components
 - **ChartView**: TradingView integration
 - **AIAnalyst**: Mode switcher (Direct/Chat)
 - **AnalysisForm**: Multi-analysis form with options
-- **ChatInterface**: AI chat with conversation history
-- **ResultsDisplay**: Formatted analysis results with tabs
+- **ChatInterface**: AI chat with conversation history and live SSE node visualizer
+- **ResultsDisplay**: Formatted markdown analysis results with agent badges
 
 ## 🔧 Configuration
 
@@ -149,10 +149,9 @@ npm run lint
 
 The frontend communicates with the backend via REST API:
 
-- `POST /api/analysis/technical` - Technical analysis
-- `POST /api/analysis/fundamental` - Fundamental analysis
-- `POST /api/analysis/news` - News sentiment
-- `POST /api/chat` - AI chat
+- `POST /api/analysis/{type}` - Single agent analysis (market, fundamentals, news, sentiment)
+- `POST /api/chat` - AI chat orchestrated by LangGraph
+- `GET /api/chat/stream/{thread_id}` - Live SSE progress tracking
 - `GET /api/health` - Health check
 - `GET /api/tickers` - Popular tickers
 
