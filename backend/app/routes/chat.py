@@ -66,7 +66,7 @@ async def chat_stream(request: ChatRequest):
             while True:
                 try:
                     msg_type, data = await asyncio.wait_for(
-                        queue.get(), timeout=500  # 8-min hard cap
+                        queue.get(), timeout=300  # 5-min hard cap
                     )
                 except asyncio.TimeoutError:
                     yield _sse({"type": "error", "message": "Request timed out after 5 minutes"})
@@ -91,7 +91,6 @@ async def chat_stream(request: ChatRequest):
                         chunk = event.get("data", {}).get("chunk")
                         if chunk and hasattr(chunk, "content") and chunk.content:
                             token = chunk.content
-                            nonlocal full_response
                             full_response += token
                             yield _sse({"type": "token", "content": token})
 
