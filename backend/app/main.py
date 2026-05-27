@@ -15,8 +15,6 @@ app = FastAPI(
     debug=settings.DEBUG
 )
 
-# Bug #13: explicit allow-list for methods and headers; never use "*" with
-# allow_credentials=True (browsers reject it and it's an attack-surface anyway).
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,

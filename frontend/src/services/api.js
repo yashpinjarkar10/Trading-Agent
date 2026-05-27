@@ -49,19 +49,85 @@ function getOrCreateThreadId() {
 
 export const chatAPI = {
   getThreadId: getOrCreateThreadId,
-  getStreamUrl: (threadId) => {
-    return `${API_BASE_URL}/api/chat/stream/${threadId}`;
-  },
   resetThread: () => {
     localStorage.removeItem(THREAD_ID_KEY);
     return getOrCreateThreadId();
   },
-  sendMessage: async (message, threadId) => {
-    const response = await api.post('/api/chat', {
-      message,
-      thread_id: threadId || getOrCreateThreadId(),
-    });
-    return response.data;
+
+  /**
+   * Stream a chat message via SSE (POST /api/chat).
+   *
+   * @param {string} message
+   * @param {string} threadId
+   * @param {object} callbacks
+   * @param {(token: string) => void}       callbacks.onToken    — fired per LLM token
+   * @param {(nodes: string[]) => void}     callbacks.onProgress — fired when active agents change
+   * @param {(response: string) => void}    callbacks.onDone     — fired when the full response is ready
+   * @param {(error: string) => void}       callbacks.onError    — fired on error
+   * @returns {() => void} abort — call this to cancel the stream
+   */
+  sendMessageStream: (message, threadId, { onToken, onProgress, onDone, onError } = {}) => {
+    const controller = new AbortController();
+
+    (async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message,
+            thread_id: threadId || getOrCreateThreadId(),
+          }),
+          signal: controller.signal,
+        });
+
+        if (!res.ok) {
+          const text = await res.text();
+          onError?.(text || `HTTP ${res.status}`);
+          return;
+        }
+
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop(); // keep incomplete line in buffer
+
+          for (const line of lines) {
+            if (!line.startsWith('data: ')) continue;
+            try {
+              const payload = JSON.parse(line.slice(6));
+              switch (payload.type) {
+                case 'token':
+                  onToken?.(payload.content);
+                  break;
+                case 'progress':
+                  onProgress?.(payload.nodes);
+                  break;
+                case 'done':
+                  onDone?.(payload.response);
+                  break;
+                case 'error':
+                  onError?.(payload.message);
+                  break;
+              }
+            } catch { /* ignore malformed lines */ }
+          }
+        }
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          onError?.(err.message || 'Stream failed');
+        }
+      }
+    })();
+
+    return () => controller.abort();
   },
 };
 

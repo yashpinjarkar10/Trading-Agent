@@ -47,42 +47,53 @@ export default function ChatInterface() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [streaming, setStreaming] = useState('');  // live token accumulator
   const [activeAgents, setActiveAgents] = useState([]);
   const [threadId, setThreadId] = useState(() => chatAPI.getThreadId());
   const endRef = useRef(null);
+  const abortRef = useRef(null);
 
-  useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, loading]);
+  useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, loading, streaming]);
 
-  const send = async (text) => {
+  const send = (text) => {
     const q = (text ?? input).trim();
     if (!q || loading) return;
     setInput('');
     setMessages((m) => [...m, { role: 'user', content: q }]);
     setLoading(true);
+    setStreaming('');
     setActiveAgents([]);
-    
-    const eventSource = new EventSource(chatAPI.getStreamUrl(threadId));
-    eventSource.onmessage = (e) => {
-      try {
-        const data = JSON.parse(e.data);
-        if (data.nodes) setActiveAgents(data.nodes);
-      } catch (err) {}
-    };
 
-    try {
-      const res = await chatAPI.sendMessage(q, threadId);
-      setMessages((m) => [...m, { role: 'assistant', content: res.response }]);
-    } catch (e) {
-      setMessages((m) => [...m, { role: 'assistant', content: `**Error:** ${e.response?.data?.detail || e.message || 'Request failed'}` }]);
-    } finally {
-      setLoading(false);
-      eventSource.close();
-      setActiveAgents([]);
-    }
+    abortRef.current = chatAPI.sendMessageStream(q, threadId, {
+      onToken: (token) => {
+        setStreaming((prev) => prev + token);
+      },
+      onProgress: (nodes) => {
+        setActiveAgents(nodes);
+      },
+      onDone: (fullResponse) => {
+        setMessages((m) => [...m, { role: 'assistant', content: fullResponse }]);
+        setStreaming('');
+        setActiveAgents([]);
+        setLoading(false);
+        abortRef.current = null;
+      },
+      onError: (err) => {
+        setMessages((m) => [...m, { role: 'assistant', content: `**Error:** ${err}` }]);
+        setStreaming('');
+        setActiveAgents([]);
+        setLoading(false);
+        abortRef.current = null;
+      },
+    });
   };
 
   const resetThread = () => {
+    if (abortRef.current) abortRef.current();
     setMessages([]);
+    setStreaming('');
+    setActiveAgents([]);
+    setLoading(false);
     setThreadId(chatAPI.resetThread());
   };
 
@@ -134,13 +145,20 @@ export default function ChatInterface() {
             <div className="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center border bg-accent-cyan/10 border-accent-cyan/30 text-accent-cyan">
               <Sparkles className="w-4 h-4 animate-pulse" />
             </div>
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center gap-1.5 px-4 py-3 rounded-xl bg-bg-subtle border border-border w-fit">
-                <span className="w-1.5 h-1.5 rounded-full bg-text-muted animate-pulse" style={{ animationDelay: '0ms' }} />
-                <span className="w-1.5 h-1.5 rounded-full bg-text-muted animate-pulse" style={{ animationDelay: '150ms' }} />
-                <span className="w-1.5 h-1.5 rounded-full bg-text-muted animate-pulse" style={{ animationDelay: '300ms' }} />
-              </div>
-              
+            <div className="flex flex-col gap-2 flex-1 max-w-[85%]">
+              {streaming ? (
+                <div className="inline-block text-left rounded-xl px-4 py-3 text-sm leading-relaxed border bg-bg-subtle border-border text-text-secondary">
+                  <SafeHTML className="formatted-chat-content" html={formatChat(streaming)} />
+                  <span className="inline-block w-1.5 h-4 bg-accent-cyan/60 animate-pulse ml-0.5 align-text-bottom rounded-sm" />
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5 px-4 py-3 rounded-xl bg-bg-subtle border border-border w-fit">
+                  <span className="w-1.5 h-1.5 rounded-full bg-text-muted animate-pulse" style={{ animationDelay: '0ms' }} />
+                  <span className="w-1.5 h-1.5 rounded-full bg-text-muted animate-pulse" style={{ animationDelay: '150ms' }} />
+                  <span className="w-1.5 h-1.5 rounded-full bg-text-muted animate-pulse" style={{ animationDelay: '300ms' }} />
+                </div>
+              )}
+
               <AnimatePresence>
                 {activeAgents.length > 0 && (
                   <motion.div 
