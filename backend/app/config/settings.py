@@ -10,7 +10,7 @@ class Settings:
     LANGSMITH_API_KEY: str = os.getenv("LANGSMITH_API_KEY", "")
     LANGSMITH_TRACING: bool = os.getenv("LANGSMITH_TRACING", "false").lower() == "true"
 
-    BACKEND_PORT: int = int(os.getenv("BACKEND_PORT", "8000"))
+    BACKEND_PORT: int = int(os.getenv("PORT", os.getenv("BACKEND_PORT", "8000")))
     CORS_ORIGINS: List[str] = [
         o.strip()
         for o in os.getenv(
