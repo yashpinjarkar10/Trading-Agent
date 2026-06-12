@@ -1,12 +1,20 @@
+from typing import Any
 from pydantic import BaseModel, Field, field_validator
-from typing import Optional
 
 
 class AnalysisRequest(BaseModel):
     ticker: str = Field(..., min_length=1, max_length=20)
-    period: Optional[str] = "1y"
-    days_back: Optional[int] = Field(7, ge=1, le=90)
-    max_articles: Optional[int] = Field(50, ge=1, le=200)
+    period: str | None = "1y"
+    days_back: int | None = Field(7, ge=1, le=90)
+    max_articles: int | None = Field(50, ge=1, le=200)
+
+
+class AnalysisResponse(BaseModel):
+    success: bool
+    analysis_type: str
+    ticker: str
+    timestamp: str
+    result: Any
 
 
 class ChatRequest(BaseModel):
@@ -29,3 +37,18 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     response: str
     thread_id: str
+
+
+class HealthResponse(BaseModel):
+    status: str
+    timestamp: str
+    version: str
+
+
+class PopularTicker(BaseModel):
+    symbol: str
+    name: str
+
+
+class TickersResponse(BaseModel):
+    tickers: list[PopularTicker]

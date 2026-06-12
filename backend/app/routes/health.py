@@ -1,33 +1,34 @@
-from fastapi import APIRouter
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, Depends
 from datetime import datetime
 
-from app.config.settings import settings
+from app.config.settings import Settings, get_settings
+from app.models.schemas import HealthResponse, TickersResponse
 
 router = APIRouter(prefix="/api", tags=["health"])
 
-@router.get("/health")
-async def health_check():
-    """Health check endpoint"""
-    return JSONResponse({
-        "status": "healthy",
-        "timestamp": datetime.now().isoformat(),
-        "version": settings.APP_VERSION
-    })
+POPULAR_TICKERS = [
+    {"symbol": "AAPL", "name": "Apple Inc."},
+    {"symbol": "MSFT", "name": "Microsoft Corporation"},
+    {"symbol": "GOOGL", "name": "Alphabet Inc."},
+    {"symbol": "AMZN", "name": "Amazon.com Inc."},
+    {"symbol": "TSLA", "name": "Tesla Inc."},
+    {"symbol": "META", "name": "Meta Platforms Inc."},
+    {"symbol": "NVDA", "name": "NVIDIA Corporation"},
+    {"symbol": "NFLX", "name": "Netflix Inc."},
+    {"symbol": "AMD", "name": "Advanced Micro Devices"},
+    {"symbol": "PYPL", "name": "PayPal Holdings Inc."}
+]
 
-@router.get("/tickers")
+@router.get("/health", response_model=HealthResponse)
+async def health_check(settings: Settings = Depends(get_settings)):
+    """Health check endpoint"""
+    return HealthResponse(
+        status="healthy",
+        timestamp=datetime.now().isoformat(),
+        version=settings.APP_VERSION
+    )
+
+@router.get("/tickers", response_model=TickersResponse)
 async def get_popular_tickers():
     """Get list of popular stock tickers"""
-    popular_tickers = [
-        {"symbol": "AAPL", "name": "Apple Inc."},
-        {"symbol": "MSFT", "name": "Microsoft Corporation"},
-        {"symbol": "GOOGL", "name": "Alphabet Inc."},
-        {"symbol": "AMZN", "name": "Amazon.com Inc."},
-        {"symbol": "TSLA", "name": "Tesla Inc."},
-        {"symbol": "META", "name": "Meta Platforms Inc."},
-        {"symbol": "NVDA", "name": "NVIDIA Corporation"},
-        {"symbol": "NFLX", "name": "Netflix Inc."},
-        {"symbol": "AMD", "name": "Advanced Micro Devices"},
-        {"symbol": "PYPL", "name": "PayPal Holdings Inc."}
-    ]
-    return JSONResponse({"tickers": popular_tickers})
+    return TickersResponse(tickers=POPULAR_TICKERS)

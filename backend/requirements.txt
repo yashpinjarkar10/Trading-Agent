@@ -35,6 +35,7 @@ mplfinance
 
 # Configuration and Environment
 python-dotenv
+pydantic-settings
 
 # Date and Time Utilities
 python-dateutil

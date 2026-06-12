@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import enum
 from datetime import datetime
-from typing import Optional
 from pydantic import BaseModel, Field, field_validator
 
 
@@ -32,46 +31,46 @@ class EventOut(BaseModel):
     after we unpack `geom` (a WKB/WKT) into lat/lng."""
     id: int
     source: str
-    source_url: Optional[str] = None
+    source_url: str | None = None
     also_seen_in: list[dict] = Field(default_factory=list)
 
     title: str
-    description: Optional[str] = None
+    description: str | None = None
     category: EventCategory
-    subcategory: Optional[str] = None
-    summary_short: Optional[str] = None
+    subcategory: str | None = None
+    summary_short: str | None = None
 
-    location_name: Optional[str] = None
-    country_iso2: Optional[str] = None
-    lat: Optional[float] = None
-    lng: Optional[float] = None
+    location_name: str | None = None
+    country_iso2: str | None = None
+    lat: float | None = None
+    lng: float | None = None
 
     occurred_at: datetime
     scraped_at: datetime
 
-    severity: Optional[int] = None
-    market_impact: Optional[int] = None
-    confidence: Optional[int] = None
+    severity: int | None = None
+    market_impact: int | None = None
+    confidence: int | None = None
     affected_sectors: list[str] = Field(default_factory=list)
     affected_tickers: list[str] = Field(default_factory=list)
 
 
 class EventFilter(BaseModel):
     """Query-string params for GET /api/events. Parsed in the route handler."""
-    since: Optional[datetime] = None
-    until: Optional[datetime] = None
-    categories: Optional[list[EventCategory]] = None
+    since: datetime | None = None
+    until: datetime | None = None
+    categories: list[EventCategory] | None = None
     min_severity: int = Field(default=0, ge=0, le=10)
     min_market_impact: int = Field(default=0, ge=0, le=10)
     # bbox: (lng_min, lat_min, lng_max, lat_max). Optional viewport filter.
-    bbox: Optional[tuple[float, float, float, float]] = None
-    tickers: Optional[list[str]] = None
+    bbox: tuple[float, float, float, float] | None = None
+    tickers: list[str] | None = None
     limit: int = Field(default=500, ge=1, le=2000)
-    cursor: Optional[int] = None  # last-seen id, for keyset pagination
+    cursor: int | None = None  # last-seen id, for keyset pagination
 
     @field_validator("bbox")
     @classmethod
-    def _bbox_sane(cls, v: Optional[tuple[float, float, float, float]]):
+    def _bbox_sane(cls, v: tuple[float, float, float, float] | None):
         if v is None:
             return v
         lng_min, lat_min, lng_max, lat_max = v

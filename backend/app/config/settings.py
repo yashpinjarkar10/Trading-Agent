@@ -1,3 +1,4 @@
+from functools import lru_cache
 from typing import List, Union
 from pydantic import Field, AliasChoices, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -13,14 +14,14 @@ class Settings(BaseSettings):
         validation_alias=AliasChoices("PORT", "BACKEND_PORT")
     )
     
-    CORS_ORIGINS: List[str] = ["http://localhost:5173", "http://localhost:3000"]
+    CORS_ORIGINS_STR: str = Field(
+        default="http://localhost:5173,http://localhost:3000",
+        validation_alias="CORS_ORIGINS"
+    )
 
-    @field_validator("CORS_ORIGINS", mode="before")
-    @classmethod
-    def assemble_cors_origins(cls, v: Union[str, List[str]]) -> List[str]:
-        if isinstance(v, str):
-            return [i.strip() for i in v.split(",") if i.strip()]
-        return v
+    @property
+    def CORS_ORIGINS(self) -> list[str]:
+        return [i.strip() for i in self.CORS_ORIGINS_STR.split(",") if i.strip()]
 
     # Redis (cache + future job broker / rate-limiter store)
     REDIS_URL: str = "redis://localhost:6379/0"
@@ -54,4 +55,8 @@ class Settings(BaseSettings):
         extra="ignore"
     )
 
-settings = Settings()
+@lru_cache
+def get_settings() -> Settings:
+    return Settings()
+
+settings = get_settings()
