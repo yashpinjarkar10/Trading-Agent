@@ -1,62 +1,78 @@
 import logging
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
 from app.config.settings import settings
+from app.events.routes import router as events_router
 from app.routes import analysis, chat, health
 
+logging.basicConfig(
+    level=settings.LOG_LEVEL.upper(),
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+)
 logger = logging.getLogger(__name__)
 
-app = FastAPI(
-    title=settings.APP_TITLE,
-    version=settings.APP_VERSION,
-    debug=settings.DEBUG
-)
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "OPTIONS"],
-    allow_headers=[
-        "Authorization",
-        "Content-Type",
-        "Accept",
-        "Origin",
-        "X-Requested-With",
-        "X-Request-ID",
-    ],
-    max_age=600,
-)
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Application lifespan manager for startup and shutdown events."""
+    logger.info("Starting %s v%s...", settings.APP_TITLE, settings.APP_VERSION)
+    yield
+    logger.info("Shutting down %s...", settings.APP_TITLE)
 
-app.include_router(analysis.router)
-app.include_router(chat.router)
-app.include_router(health.router)
 
-# Event Map (Phase 1+) — only mounted when EVENTS_ENABLED=true to keep the
-# rest of the app bootable on machines without a Supabase connection.
-if settings.EVENTS_ENABLED:
-    from app.events.routes import router as events_router
-    app.include_router(events_router)
-    logger.info("Event Map enabled — /api/events router mounted")
-else:
-    logger.info("Event Map disabled (set EVENTS_ENABLED=true to mount)")
+def create_app() -> FastAPI:
+    """Application factory for FastAPI app instance."""
+    application = FastAPI(
+        title=settings.APP_TITLE,
+        version=settings.APP_VERSION,
+        debug=settings.DEBUG,
+        lifespan=lifespan,
+    )
 
-@app.get("/")
-async def root():
-    """Root endpoint"""
-    return {
-        "message": "Trading Agent API",
-        "version": settings.APP_VERSION,
-        "docs": "/docs"
-    }
+    application.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.CORS_ORIGINS,
+        allow_credentials=True,
+        allow_methods=["GET", "POST", "OPTIONS"],
+        allow_headers=[
+            "Authorization",
+            "Content-Type",
+            "Accept",
+            "Origin",
+            "X-Requested-With",
+            "X-Request-ID",
+        ],
+        max_age=600,
+    )
+
+    # Register Routers
+    application.include_router(health.router)
+    application.include_router(chat.router)
+    application.include_router(analysis.router)
+    application.include_router(events_router)
+
+    @application.get("/")
+    async def root():
+        """Root status and metadata endpoint"""
+        return {
+            "message": settings.APP_TITLE,
+            "version": settings.APP_VERSION,
+            "docs": "/docs",
+        }
+
+    return application
+
+
+app = create_app()
 
 if __name__ == "__main__":
     uvicorn.run(
         "app.main:app",
         host="0.0.0.0",
         port=settings.BACKEND_PORT,
-        reload=settings.DEBUG
+        reload=settings.DEBUG,
     )

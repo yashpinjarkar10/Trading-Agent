@@ -19,8 +19,6 @@ class AnalysisResponse(BaseModel):
 
 class ChatRequest(BaseModel):
     message: str = Field(..., min_length=1, max_length=4000)
-    # Bug #9: thread_id is REQUIRED — no shared "default" thread across users.
-    # Must be unique per (user, session). Min length 8 to discourage collisions.
     thread_id: str = Field(..., min_length=8, max_length=128)
 
     @field_validator("thread_id")

@@ -18,9 +18,11 @@ scraper/
 │   ├── firms.py             # NASA wildfires (FRP-based)    — ZERO LLM (TODO)
 │   ├── reliefweb.py         # humanitarian disasters        — ZERO LLM (TODO)
 │   ├── gdelt.py             # news events (CAMEO codes)     — light LLM (TODO)
-│   └── wikipedia.py         # current events portal         — LLM needed (TODO)
+│   ├── wikipedia.py         # current events portal         — LLM needed (TODO)
+│   └── forexfactory.py      # economic calendar (High Impact)— ZERO LLM
 └── scripts/
-    └── run_usgs.py          # GH Actions entrypoint per source
+    ├── run_usgs.py          # GH Actions entrypoint per source
+    └── run_forexfactory.py
 ```
 
 ## Flow per scrape

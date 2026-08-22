@@ -18,6 +18,13 @@ router = APIRouter(prefix="/api", tags=["chat"])
 @router.post("/chat")
 async def chat_stream(request: ChatRequest):
     """
+    Input:
+    {
+        "message": "Analyze AAPL stock performance",
+        "thread_id": "session-xyz-12345"
+    }
+
+    Output:
     Single streaming endpoint for the AI trading assistant.
 
     Returns an SSE stream with three event types:
